@@ -1,30 +1,204 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">main</a>
+﻿@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<header class="topbar">
+    <div class="topbar-inner">
+
+        <!-- Brand pill (top-left) -->
+        <a class="brand-pill" href="">
+            <img src="images/gs-battery-logo.png" alt="PT. GS Battery" class="brand-logo-img" />
+        </a>
+
+        <!-- Center nav links (dynamic, hidden on the home/dashboard-style pages if you prefer) -->
+        <nav class="topbar-links d-none d-md-flex">
+            @foreach (var item in NavItems)
+            {
+                <NavLink class="topbar-link" href="@item.Href" Match="item.Match">
+                    @item.Label
+                </NavLink>
+            }
+        </nav>
+
+        <!-- User pill (top-right) -->
+        <div class="user-pill">
+            <span class="user-name">@UserName</span>
+            <img src="@AvatarUrl" alt="@UserName" class="user-avatar" />
+        </div>
+
+        <!-- Mobile toggle -->
+        <input type="checkbox" title="Navigation menu" class="navbar-toggler d-md-none" />
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+    <!-- Mobile dropdown -->
+    <div class="topbar-mobile d-md-none" onclick="document.querySelector('.navbar-toggler').click()">
+        @foreach (var item in NavItems)
+        {
+            <NavLink class="topbar-mobile-link" href="@item.Href" Match="item.Match">
+                <span class="bi @item.Icon" aria-hidden="true"></span> @item.Label
             </NavLink>
-        </div>
+        }
+    </div>
+</header>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+@code {
+    // The current signed-in user — wire this up to your auth/identity service.
+    // Kept as parameters so the bar stays reusable/dynamic rather than hard-coded.
+    [Parameter] public string UserName { get; set; } = "FAJRI KUARNIAWAN";
+    [Parameter] public string AvatarUrl { get; set; } = "https://api.dicebear.com/7.x/avataaars/svg?seed=Fajri";
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    // Nav links are data-driven — add/remove entries here (or load from a service)
+    // and both the desktop and mobile menus update automatically.
+    private List<NavItemModel> NavItems { get; set; } = new();
 
+    protected override void OnInitialized()
+    {
+        NavItems = new List<NavItemModel>
+        {
+            new("", "Home", "bi-house-door-fill", NavLinkMatch.All),
+            new("counter", "Counter", "bi-plus-square-fill", NavLinkMatch.Prefix),
+            new("weather", "Weather", "bi-list-nested", NavLinkMatch.Prefix),
+        };
+
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => StateHasChanged();
+
+    public void Dispose()
+        => NavigationManager.LocationChanged -= OnLocationChanged;
+
+    private record NavItemModel(string Href, string Label, string Icon, NavLinkMatch Match);
+}
+
+<style>
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        background: #fff;
+        padding: 1.1rem 1.5rem;
+    }
+
+    .topbar-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    /* Brand pill */
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #ececec;
+        border-radius: 999px;
+        padding: .55rem 1rem;
+        box-shadow: 0 2px 8px rgba(20, 20, 20, .06);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .brand-logo-img {
+        height: 1.4rem;
+        width: auto;
+        display: block;
+    }
+
+    /* Center links */
+    .topbar-links {
+        gap: 1.75rem;
+    }
+
+    .topbar-link {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .03em;
+        color: #6b6b6b;
+        text-decoration: none;
+        padding-bottom: .2rem;
+        border-bottom: 2px solid transparent;
+        transition: color .15s ease, border-color .15s ease;
+    }
+
+    .topbar-link:hover {
+        color: #1a1a1a;
+    }
+
+    .topbar-link.active {
+        color: #e2222e;
+        border-color: #e2222e;
+    }
+
+    /* User pill */
+    .user-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .6rem;
+        background: #fff;
+        border: 1px solid #ececec;
+        border-radius: 999px;
+        padding: .35rem .35rem .35rem 1rem;
+        box-shadow: 0 2px 8px rgba(20, 20, 20, .06);
+    }
+
+    .user-name {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 700;
+        font-size: .72rem;
+        letter-spacing: .05em;
+        color: #1a1a1a;
+    }
+
+    .user-avatar {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #eef3fb;
+    }
+
+    /* Mobile menu */
+    .navbar-toggler {
+        appearance: none;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 50%;
+        border: 1px solid #ececec;
+        background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(26,26,26,0.8)' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") center/1.1rem no-repeat;
+        cursor: pointer;
+    }
+
+    .topbar-mobile {
+        display: none;
+        flex-direction: column;
+        gap: .25rem;
+        margin-top: 1rem;
+        padding: .75rem;
+        border-radius: 1rem;
+        background: #fafafa;
+        border: 1px solid #ececec;
+    }
+
+    .navbar-toggler:checked ~ .topbar-mobile,
+    .topbar:has(.navbar-toggler:checked) .topbar-mobile {
+        display: flex;
+    }
+
+    .topbar-mobile-link {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: .85rem;
+        font-weight: 600;
+        color: #444;
+        text-decoration: none;
+        padding: .6rem .75rem;
+        border-radius: .6rem;
+    }
+
+    .topbar-mobile-link.active {
+        color: #e2222e;
+        background: #fdecec;
+    }
+</style>
