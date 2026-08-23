@@ -4,10 +4,7 @@
 
 <div class="home-canvas">
 
-    <!-- Faded brand watermark, purely decorative -->
     <img src="images/gs-battery-icon.png" class="watermark" alt="" aria-hidden="true" />
-
-    <!-- Modules (data-driven — add/remove cards here, layout adapts automatically) -->
     <section class="modules-wrap">
         <div class="modules-grid">
             @foreach (var module in Modules)
@@ -23,9 +20,6 @@
 </div>
 
 @code {
-    // Cards are generated from this list instead of duplicated markup —
-    // add, remove, or reorder modules here (or load them from an API/service)
-    // and the grid re-flows on its own.
     private List<ModuleCard> Modules { get; set; } = new();
 
     protected override void OnInitialized()

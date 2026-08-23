@@ -3,7 +3,9 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using Microsoft.AspNetCore.Components.Forms
+@using main.Services
 @inject NavigationManager NavigationManager
+@inject DeclarationStore DeclarationStore
 
 <PageTitle>Form Value & Agent Declaration</PageTitle>
 
@@ -141,7 +143,7 @@
                         }
                         @if (ShowAttachmentError)
                         {
-                            <div class="field-error">Lampirkan minimal satu dokumen (foto atau video).</div>
+                            <div class="field-error">Lampirkan minimal satu dokumen foto/video</div>
                         }
                     </div>
 
@@ -240,7 +242,7 @@
             var detectedMimeType = DetectImageMimeType(bytes);
             if (detectedMimeType is null)
             {
-                PhotoError = "File tidak dikenali sebagai foto yang valid (JPEG/PNG/GIF/WebP).";
+                PhotoError = "File tidak dikenali sebagai foto yang valid (JPEG/PNG/GIF/WebP)";
                 PhotoFile = null;
                 PhotoFileName = null;
                 PhotoPreviewUrl = null;
@@ -254,7 +256,7 @@
         }
         catch (IOException)
         {
-            PhotoError = "Ukuran foto terlalu besar (maks 8 MB).";
+            PhotoError = "Ukuran foto terlalu besar (maks 8 MB)";
             PhotoFile = null;
             PhotoFileName = null;
             PhotoPreviewUrl = null;
@@ -279,7 +281,7 @@
             var detectedMimeType = DetectVideoMimeType(bytes);
             if (detectedMimeType is null)
             {
-                VideoError = "File tidak dikenali sebagai video yang valid (MP4/WebM/MOV/AVI).";
+                VideoError = "File tidak dikenali sebagai video yang valid (MP4/WebM/MOV/AVI)";
                 VideoFile = null;
                 VideoFileName = null;
                 VideoPreviewUrl = null;
@@ -293,7 +295,7 @@
         }
         catch (IOException)
         {
-            VideoError = "Ukuran video terlalu besar (maks 40 MB).";
+            VideoError = "Ukuran video terlalu besar (maks 40 MB)";
             VideoFile = null;
             VideoFileName = null;
             VideoPreviewUrl = null;
@@ -394,7 +396,7 @@
         var pic = PicOptions.FirstOrDefault(p => p.Id == FormModel.PicId);
         if (pic is null)
         {
-            PicValidationError = "PIC yang dipilih tidak valid. Silakan pilih ulang dari daftar.";
+            PicValidationError = "PIC yang dipilih tidak valid. Silakan pilih ulang dari daftar";
             return;
         }
         FormModel.Department = pic.Department;
@@ -405,6 +407,16 @@
             return;
         }
 
+        DeclarationStore.Add(new DeclarationRecord(
+            PicId: pic.Id,
+            PicName: pic.Name,
+            Department: pic.Department,
+            SafetyDeclaration: FormModel.SafetyDeclaration,
+            ValueDeclaration: FormModel.ValueDeclaration,
+            PhotoFileName: PhotoFileName,
+            VideoFileName: VideoFileName,
+            SubmittedAtUtc: DateTime.UtcNow));
+
         NavigationManager.NavigateTo("/");
     }
 
@@ -412,19 +424,19 @@
 
     private class DeclarationModel
     {
-        [Required(ErrorMessage = "Nama PIC wajib diisi.")]
-        [StringLength(20, ErrorMessage = "NIM PIC tidak valid.")]
+        [Required(ErrorMessage = "Nama PIC wajib diisi")]
+        [StringLength(20, ErrorMessage = "NIM PIC tidak valid")]
         public string PicId { get; set; } = string.Empty;
 
-        [StringLength(120, ErrorMessage = "Department tidak valid.")]
+        [StringLength(120, ErrorMessage = "Department tidak valid")]
         public string Department { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Safety Declaration wajib diisi.")]
-        [StringLength(2000, ErrorMessage = "Safety Declaration maksimal 2000 karakter.")]
+        [Required(ErrorMessage = "Safety Declaration wajib diisi")]
+        [StringLength(2000, ErrorMessage = "Safety Declaration maksimal 2000 karakter")]
         public string SafetyDeclaration { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Value Declaration wajib diisi.")]
-        [StringLength(2000, ErrorMessage = "Value Declaration maksimal 2000 karakter.")]
+        [Required(ErrorMessage = "Value Declaration wajib diisi")]
+        [StringLength(2000, ErrorMessage = "Value Declaration maksimal 2000 karakter")]
         public string ValueDeclaration { get; set; } = string.Empty;
     }
 
@@ -443,11 +455,11 @@
 
     .watermark {
         position: absolute;
-        top: 0;
+        top: 50%;
         left: 50%;
         width: 30rem;
         height: auto;
-        transform: translate(-50%, -25%);
+        transform: translate(-50%, -50%);
         opacity: .1;
         pointer-events: none;
         user-select: none;

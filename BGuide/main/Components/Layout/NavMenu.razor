@@ -9,24 +9,24 @@
             <img src="images/gs-battery-logo.png" alt="PT. GS Battery" class="brand-logo-img" />
         </a>
 
-        <!-- Center nav links (dynamic, hidden on the home/dashboard-style pages if you prefer) -->
-        <nav class="topbar-links d-none d-md-flex">
-            @foreach (var item in NavItems)
-            {
-                <NavLink class="topbar-link" href="@item.Href" Match="item.Match">
-                    @item.Label
-                </NavLink>
-            }
-        </nav>
+        <div class="topbar-middle">
+            <nav class="topbar-links d-none d-md-flex">
+                @foreach (var item in NavItems)
+                {
+                    <NavLink class="topbar-link" href="@item.Href" Match="item.Match">
+                        @item.Label
+                    </NavLink>
+                }
+            </nav>
+
+            <input type="checkbox" title="Navigation menu" class="navbar-toggler d-md-none" />
+        </div>
 
         <!-- User pill (top-right) -->
         <div class="user-pill">
             <span class="user-name">@UserName</span>
             <img src="@AvatarUrl" alt="@UserName" class="user-avatar" />
         </div>
-
-        <!-- Mobile toggle -->
-        <input type="checkbox" title="Navigation menu" class="navbar-toggler d-md-none" />
     </div>
 
     <!-- Mobile dropdown -->
@@ -41,13 +41,9 @@
 </header>
 
 @code {
-    // The current signed-in user — wire this up to your auth/identity service.
-    // Kept as parameters so the bar stays reusable/dynamic rather than hard-coded.
     [Parameter] public string UserName { get; set; } = "FAJRI KUARNIAWAN";
     [Parameter] public string AvatarUrl { get; set; } = "https://api.dicebear.com/7.x/avataaars/svg?seed=Fajri";
 
-    // Nav links are data-driven — add/remove entries here (or load from a service)
-    // and both the desktop and mobile menus update automatically.
     private List<NavItemModel> NavItems { get; set; } = new();
 
     protected override void OnInitialized()
@@ -55,8 +51,8 @@
         NavItems = new List<NavItemModel>
         {
             new("", "Home", "bi-house-door-fill", NavLinkMatch.All),
-            new("counter", "Counter", "bi-plus-square-fill", NavLinkMatch.Prefix),
-            new("weather", "Weather", "bi-list-nested", NavLinkMatch.Prefix),
+            new("dashboard", "Dashboard", "bi-plus-square-fill", NavLinkMatch.Prefix),
+            new("declaration", "Value & Agent Declaration Portal", "bi-list-nested", NavLinkMatch.Prefix),
         };
 
         NavigationManager.LocationChanged += OnLocationChanged;
@@ -132,6 +128,12 @@
         border-color: #e2222e;
     }
 
+    .topbar-middle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* User pill */
     .user-pill {
         display: inline-flex;
@@ -160,15 +162,21 @@
         background: #eef3fb;
     }
 
-    /* Mobile menu */
     .navbar-toggler {
         appearance: none;
-        width: 2.3rem;
-        height: 2.3rem;
+        width: 2.5rem;
+        height: 2.5rem;
         border-radius: 50%;
         border: 1px solid #ececec;
-        background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(26,26,26,0.8)' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") center/1.1rem no-repeat;
+        background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(26,26,26,0.8)' stroke-width='2.4' stroke-linecap='round' d='M4 8h22M4 15h22M4 22h22'/%3e%3c/svg%3e") center/1.2rem no-repeat;
         cursor: pointer;
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+
+    .navbar-toggler:checked {
+        background-color: #1400f5;
+        border-color: #1400f5;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='white' stroke-width='2.4' stroke-linecap='round' d='M7 7l16 16M23 7L7 23'/%3e%3c/svg%3e");
     }
 
     .topbar-mobile {
@@ -182,7 +190,6 @@
         border: 1px solid #ececec;
     }
 
-    .navbar-toggler:checked ~ .topbar-mobile,
     .topbar:has(.navbar-toggler:checked) .topbar-mobile {
         display: flex;
     }
