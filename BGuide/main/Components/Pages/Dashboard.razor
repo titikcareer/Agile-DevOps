@@ -53,6 +53,50 @@
         </section>
 
         <section class="dashboard-section">
+            <h2 class="section-heading">Recap</h2>
+            <p class="section-sub">Jumlah seluruh laporan yang pernah dikirim PIC</p>
+
+            @if (!PicTotals.Any())
+            {
+                <div class="empty-state">Belum ada data submission</div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="submissions-table pic-totals-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>NIM</th>
+                                <th>Nama PIC</th>
+                                <th>Total Submission</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ var rank = 0; }
+                            @foreach (var pic in PicTotals)
+                            {
+                                rank++;
+                                <tr>
+                                    <td class="cell-nowrap">@rank</td>
+                                    <td class="cell-nowrap">@pic.PicId</td>
+                                    <td class="cell-nowrap">@pic.PicName</td>
+                                    <td class="cell-nowrap pic-total-count">@pic.Count submission</td>
+                                    <td class="pic-total-bar-cell">
+                                        <div class="pic-total-bar-track">
+                                            <div class="pic-total-bar-fill" style="width:@(GetBarWidthPercent(pic.Count))%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="dashboard-section">
             <h2 class="section-heading">Data Value &amp; Agent Declaration</h2>
             <p class="section-sub">@Submissions.Count submission tersimpan</p>
 
@@ -109,6 +153,7 @@
 @code {
     private IReadOnlyList<DeclarationRecord> Submissions = Array.Empty<DeclarationRecord>();
     private IReadOnlyList<BestAgentOfMonth> BestAgents = Array.Empty<BestAgentOfMonth>();
+    private IReadOnlyList<PicTotal> PicTotals = Array.Empty<PicTotal>();
 
     protected override void OnInitialized()
     {
@@ -129,7 +174,25 @@
     {
         Submissions = DeclarationStore.GetAll();
         BestAgents = DeclarationStore.GetBestAgentsByMonth();
+
+        PicTotals = Submissions
+            .GroupBy(s => (s.PicId, s.PicName))
+            .Select(g => new PicTotal(g.Key.PicId, g.Key.PicName, g.Count()))
+            .OrderByDescending(p => p.Count)
+            .ThenBy(p => p.PicName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
+
+    // Relative bar width for the simple leaderboard visualization, scaled
+    // against whichever PIC currently has the most submissions.
+    private int GetBarWidthPercent(int count)
+    {
+        var max = PicTotals.Count > 0 ? PicTotals[0].Count : 0;
+        if (max <= 0) return 0;
+        return (int)Math.Round(count * 100.0 / max);
+    }
+
+    private record PicTotal(string PicId, string PicName, int Count);
 
     private static string FormatMonth(DateOnly month) =>
         month.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("id-ID"));
@@ -323,6 +386,36 @@
         font-weight: 700;
         margin-right: .3rem;
         white-space: nowrap;
+    }
+
+    /* Per-PIC totals leaderboard */
+    .pic-totals-table td {
+        vertical-align: middle;
+    }
+
+    .pic-total-count {
+        font-weight: 700;
+        color: #1400f5;
+    }
+
+    .pic-total-bar-cell {
+        width: 40%;
+        min-width: 8rem;
+    }
+
+    .pic-total-bar-track {
+        width: 100%;
+        height: .5rem;
+        background: #f0f0f5;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .pic-total-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1400f5, #6a5bff);
+        border-radius: 999px;
+        transition: width .3s ease;
     }
 
     @@media (max-width: 576px) {
