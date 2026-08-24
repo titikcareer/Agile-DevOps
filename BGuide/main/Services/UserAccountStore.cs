@@ -34,19 +34,19 @@ public class UserAccountStore
                 new[] { Roles.DashboardAccess }),
 
             CreateUser(
-                "019900",
+                "011916",
                 "Suarsono",
                 "GA, CSR, KM, SECURITY",
                 new[] { Roles.DashboardAccess }),
 
             CreateUser(
-                "012044",
+                "011917",
                 "M. Amirudin",
                 "GA, CSR, KM, SECURITY",
                 Array.Empty<string>()),
 
             CreateUser(
-                "013210",
+                "011918",
                 "Sri Haryanto",
                 "Digital Transformation",
                 Array.Empty<string>())
