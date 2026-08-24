@@ -5,7 +5,14 @@ public static class Roles
     public const string DashboardAccess = "DashboardAccess";
 }
 
-public record UserAccount(string Nim, string Name, string Department, string PasswordHash, IReadOnlyList<string> Roles);
+public record UserAccount(
+    string Nim,
+    string Name,
+    string Department,
+    string PasswordHash,
+    IReadOnlyList<string> Roles,
+    bool MustChangePassword = true
+);
 
 public class UserAccountStore
 {
@@ -18,27 +25,88 @@ public class UserAccountStore
 
     public UserAccountStore()
     {
-        const string demoPassword = "ChangeMe123!";
-
         _usersByNim = new List<UserAccount>
         {
-            new("011915", "Fajri Kurniawan", "GA, CSR, KM, SECURITY", PasswordHasher.Hash(demoPassword), new[] { Roles.DashboardAccess }),
-            new("019900", "Suarsono", "GA, CSR, KM, SECURITY", PasswordHasher.Hash(demoPassword), new[] { Roles.DashboardAccess }),
-            new("012044", "M. Amirudin", "GA, CSR, KM, SECURITY", PasswordHasher.Hash(demoPassword), Array.Empty<string>()),
-            new("013210", "Sri Haryanto", "Digital Transformation", PasswordHasher.Hash(demoPassword), Array.Empty<string>()),
-        }.ToDictionary(u => u.Nim, StringComparer.OrdinalIgnoreCase);
+            CreateUser(
+                "011915",
+                "Fajri Kurniawan",
+                "GA, CSR, KM, SECURITY",
+                new[] { Roles.DashboardAccess }),
+
+            CreateUser(
+                "019900",
+                "Suarsono",
+                "GA, CSR, KM, SECURITY",
+                new[] { Roles.DashboardAccess }),
+
+            CreateUser(
+                "012044",
+                "M. Amirudin",
+                "GA, CSR, KM, SECURITY",
+                Array.Empty<string>()),
+
+            CreateUser(
+                "013210",
+                "Sri Haryanto",
+                "Digital Transformation",
+                Array.Empty<string>())
+        }.ToDictionary(
+            u => u.Nim,
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static UserAccount CreateUser(
+        string nim,
+        string name,
+        string department,
+        IReadOnlyList<string> roles)
+    {
+        var initialPassword = GenerateInitialPassword(nim);
+
+        return new UserAccount(
+            nim,
+            name,
+            department,
+            PasswordHasher.Hash(initialPassword),
+            roles,
+            MustChangePassword: true);
+    }
+
+    private static string GenerateInitialPassword(string nim)
+    {
+        if (string.IsNullOrWhiteSpace(nim) ||
+            nim.Length != 6 ||
+            !nim.All(char.IsDigit))
+        {
+            throw new ArgumentException(
+                "NIM must contain exactly 6 digits.",
+                nameof(nim));
+        }
+
+        return string.Concat(
+            nim.AsSpan(2, 2),
+            nim.AsSpan(4, 2),
+            nim.AsSpan(0, 2));
     }
 
     public UserAccount? TryAuthenticate(string nim, string password)
     {
+        if (string.IsNullOrWhiteSpace(nim) ||
+            string.IsNullOrEmpty(password))
+        {
+            return null;
+        }
+
         lock (_lock)
         {
-            if (_loginAttempts.TryGetValue(nim, out var attempt) && attempt.LockedUntilUtc > DateTime.UtcNow)
+            if (_loginAttempts.TryGetValue(nim, out var attempt) &&
+                attempt.LockedUntilUtc > DateTime.UtcNow)
             {
                 return null;
             }
 
-            if (!_usersByNim.TryGetValue(nim, out var user) || !PasswordHasher.Verify(password, user.PasswordHash))
+            if (!_usersByNim.TryGetValue(nim, out var user) ||
+                !PasswordHasher.Verify(password, user.PasswordHash))
             {
                 RegisterFailedAttempt(nim);
                 return null;
@@ -51,22 +119,46 @@ public class UserAccountStore
 
     private void RegisterFailedAttempt(string nim)
     {
-        var current = _loginAttempts.TryGetValue(nim, out var existing) ? existing.FailedCount : 0;
+        var current = _loginAttempts.TryGetValue(nim, out var existing)
+            ? existing.FailedCount
+            : 0;
+
         var count = current + 1;
-        var lockedUntil = count >= MaxFailedAttempts ? DateTime.UtcNow.Add(LockoutDuration) : DateTime.MinValue;
+
+        var lockedUntil = count >= MaxFailedAttempts
+            ? DateTime.UtcNow.Add(LockoutDuration)
+            : DateTime.MinValue;
+
         _loginAttempts[nim] = (count, lockedUntil);
     }
 
     public UserAccount? FindByNim(string nim)
     {
+        if (string.IsNullOrWhiteSpace(nim))
+        {
+            return null;
+        }
+
         lock (_lock)
         {
-            return _usersByNim.TryGetValue(nim, out var user) ? user : null;
+            return _usersByNim.TryGetValue(nim, out var user)
+                ? user
+                : null;
         }
     }
 
-    public bool ChangePassword(string nim, string currentPassword, string newPassword)
+    public bool ChangePassword(
+        string nim,
+        string currentPassword,
+        string newPassword)
     {
+        if (string.IsNullOrWhiteSpace(nim) ||
+            string.IsNullOrEmpty(currentPassword) ||
+            string.IsNullOrEmpty(newPassword))
+        {
+            return false;
+        }
+
         lock (_lock)
         {
             if (!_usersByNim.TryGetValue(nim, out var user))
@@ -74,12 +166,19 @@ public class UserAccountStore
                 return false;
             }
 
-            if (!PasswordHasher.Verify(currentPassword, user.PasswordHash))
+            if (!PasswordHasher.Verify(
+                    currentPassword,
+                    user.PasswordHash))
             {
                 return false;
             }
 
-            _usersByNim[nim] = user with { PasswordHash = PasswordHasher.Hash(newPassword) };
+            _usersByNim[nim] = user with
+            {
+                PasswordHash = PasswordHasher.Hash(newPassword),
+                MustChangePassword = false
+            };
+
             return true;
         }
     }
