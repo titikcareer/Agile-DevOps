@@ -1,7 +1,9 @@
 ﻿@page "/declaration"
 @rendermode InteractiveServer
+@attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 @using System.Text
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using main.Services
 @inject NavigationManager NavigationManager
@@ -200,8 +202,9 @@
         PicOptions = new List<PicRecord>
         {
             new("011915", "FAJRI KURNIAWAN", "GA, CSR, KM, SECURITY"),
-            new("012044", "SRI HARYANTO", "Digital Transformation"),
+            new("019900", "SUARSONO", "GA, CSR, KM, SECURITY"),
             new("013210", "M. AMIRUDIN", "GA, CSR, KM, SECURITY"),
+            new("012044", "SRI HARYANTO", "Digital Transformation"),
         };
     }
 

@@ -1,4 +1,7 @@
 ﻿@implements IDisposable
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using main.Services
 @inject NavigationManager NavigationManager
 
 <header class="topbar">
@@ -26,6 +29,9 @@
         <div class="user-pill">
             <span class="user-name">@UserName</span>
             <img src="@AvatarUrl" alt="@UserName" class="user-avatar" />
+            <a href="/logout" class="logout-link" title="Keluar" aria-label="Keluar">
+                <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
+            </a>
         </div>
     </div>
 
@@ -41,19 +47,37 @@
 </header>
 
 @code {
-    [Parameter] public string UserName { get; set; } = "FAJRI KUARNIAWAN";
-    [Parameter] public string AvatarUrl { get; set; } = "https://api.dicebear.com/7.x/avataaars/svg?seed=Fajri";
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
+    private string UserName { get; set; } = string.Empty;
+    private string AvatarUrl { get; set; } = string.Empty;
     private List<NavItemModel> NavItems { get; set; } = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        NavItems = new List<NavItemModel>
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        UserName = user.FindFirst(ClaimTypes.Name)?.Value ?? "Pengguna";
+        AvatarUrl = $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(UserName)}";
+
+        var canSeeDashboard = user.IsInRole(Roles.DashboardAccess);
+
+        var allItems = new List<NavItemModel>
         {
-            new("", "Home", "bi-house-door-fill", NavLinkMatch.All),
-            new("dashboard", "Dashboard", "bi-plus-square-fill", NavLinkMatch.Prefix),
-            new("declaration", "Value & Agent Declaration Portal", "bi-list-nested", NavLinkMatch.Prefix),
+            new("", "Home", "bi-house-door-fill", NavLinkMatch.All, RequiresDashboardAccess: false),
+            new("dashboard", "Dashboard", "bi-plus-square-fill", NavLinkMatch.Prefix, RequiresDashboardAccess: true),
+            new("declaration", "Value & Agent Declaration Portal", "bi-list-nested", NavLinkMatch.Prefix, RequiresDashboardAccess: false),
+            new("reset-password", "Ganti Password", "bi-key-fill", NavLinkMatch.Prefix, RequiresDashboardAccess: false),
         };
+
+        // Same principle as Home.razor: this only tidies up the menu.
+        // Dashboard.razor's own [Authorize(Roles = ...)] is what actually
+        // blocks direct URL access for anyone without the role.
+        NavItems = allItems
+            .Where(i => !i.RequiresDashboardAccess || canSeeDashboard)
+            .ToList();
 
         NavigationManager.LocationChanged += OnLocationChanged;
     }
@@ -64,7 +88,7 @@
     public void Dispose()
         => NavigationManager.LocationChanged -= OnLocationChanged;
 
-    private record NavItemModel(string Href, string Label, string Icon, NavLinkMatch Match);
+    private record NavItemModel(string Href, string Label, string Icon, NavLinkMatch Match, bool RequiresDashboardAccess);
 }
 
 <style>
@@ -160,6 +184,23 @@
         border-radius: 50%;
         object-fit: cover;
         background: #eef3fb;
+    }
+
+    .logout-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        color: #8a8a8a;
+        text-decoration: none;
+        transition: background-color .15s ease, color .15s ease;
+    }
+
+    .logout-link:hover {
+        background: #fdecec;
+        color: #e2222e;
     }
 
     .navbar-toggler {

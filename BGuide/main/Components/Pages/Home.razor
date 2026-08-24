@@ -1,13 +1,17 @@
 ﻿@page "/"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using main.Services
 
-<PageTitle>Home | BGuide</PageTitle>
+<PageTitle>Home</PageTitle>
 
 <div class="home-canvas">
 
     <img src="images/gs-battery-icon.png" class="watermark" alt="" aria-hidden="true" />
     <section class="modules-wrap">
         <div class="modules-grid">
-            @foreach (var module in Modules)
+            @foreach (var module in VisibleModules)
             {
                 <a href="@module.Href" class="module-card">
                     <span class="module-icon bi @module.Icon" aria-hidden="true"></span>
@@ -20,18 +24,29 @@
 </div>
 
 @code {
-    private List<ModuleCard> Modules { get; set; } = new();
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
-    protected override void OnInitialized()
+    private List<ModuleCard> AllModules { get; set; } = new();
+    private List<ModuleCard> VisibleModules { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        Modules = new List<ModuleCard>
+        AllModules = new List<ModuleCard>
         {
-            new("Dashboard", "bi-grid", "dashboard"),
-            new("Value & Agent Declaration Portal", "bi-megaphone", "declaration"),
+            new("Dashboard", "bi-grid", "dashboard", RequiresDashboardAccess: true),
+            new("Value & Agent Declaration Portal", "bi-megaphone", "declaration", RequiresDashboardAccess: false),
         };
+
+        var authState = await AuthStateTask;
+        var canSeeDashboard = authState.User.IsInRole(Roles.DashboardAccess);
+
+        VisibleModules = AllModules
+            .Where(m => !m.RequiresDashboardAccess || canSeeDashboard)
+            .ToList();
     }
 
-    private record ModuleCard(string Title, string Icon, string Href);
+    private record ModuleCard(string Title, string Icon, string Href, bool RequiresDashboardAccess);
 }
 
 <style>
