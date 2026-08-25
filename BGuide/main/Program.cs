@@ -13,10 +13,7 @@ builder.Services.Configure<HubOptions>(options =>
     options.MaximumReceiveMessageSize = 40 * 1024 * 1024; // 40 MB
 });
 
-// Cookie authentication: LoginPage.razor and Logout.razor sign the cookie
-// in/out during a real HTTP request (they run static SSR, no @rendermode),
-// and every interactive page reads the resulting identity via cascading
-// authentication state (see AddCascadingAuthenticationState below).
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -26,7 +23,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Strict;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -43,9 +40,6 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
-// Must run before UseAntiforgery: the antiforgery check and any [Authorize]
-// checks both depend on HttpContext.User already being populated.
 app.UseAuthentication();
 app.UseAuthorization();
 
