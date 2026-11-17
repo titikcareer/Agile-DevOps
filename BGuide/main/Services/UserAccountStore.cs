@@ -1,10 +1,8 @@
 namespace main.Services;
-
 public static class Roles
 {
     public const string DashboardAccess = "DashboardAccess";
 }
-
 public record UserAccount(
     string Nim,
     string Name,
@@ -13,13 +11,11 @@ public record UserAccount(
     IReadOnlyList<string> Roles,
     bool MustChangePassword = true
 );
-
 public class UserAccountStore
 {
     private readonly object _lock = new();
     private readonly Dictionary<string, UserAccount> _usersByNim;
     private readonly Dictionary<string, (int FailedCount, DateTime LockedUntilUtc)> _loginAttempts = new();
-
     private const int MaxFailedAttempts = 5;
     private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
@@ -71,7 +67,6 @@ public class UserAccountStore
             roles,
             MustChangePassword: true);
     }
-
     private static string GenerateInitialPassword(string nim)
     {
         if (string.IsNullOrWhiteSpace(nim) ||
@@ -116,7 +111,6 @@ public class UserAccountStore
             return user;
         }
     }
-
     private void RegisterFailedAttempt(string nim)
     {
         var current = _loginAttempts.TryGetValue(nim, out var existing)
@@ -131,7 +125,6 @@ public class UserAccountStore
 
         _loginAttempts[nim] = (count, lockedUntil);
     }
-
     public UserAccount? FindByNim(string nim)
     {
         if (string.IsNullOrWhiteSpace(nim))

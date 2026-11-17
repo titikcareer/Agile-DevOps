@@ -27,8 +27,10 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
+    // Full catalog plus the subset the current user is allowed to see
     private List<ModuleCard> AllModules { get; set; } = new();
     private List<ModuleCard> VisibleModules { get; set; } = new();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,6 +48,7 @@
             .ToList();
     }
 
+    /// Describes one navigation card on the home screen
     private record ModuleCard(string Title, string Icon, string Href, bool RequiresDashboardAccess);
 }
 

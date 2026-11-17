@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 
 namespace main.Services;
-
 public static class PasswordHasher
 {
     private const int SaltSizeBytes = 16;
@@ -15,7 +14,6 @@ public static class PasswordHasher
         var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, Algorithm, KeySizeBytes);
         return $"{Convert.ToBase64String(salt)}.{Convert.ToBase64String(key)}";
     }
-
     public static bool Verify(string password, string storedHash)
     {
         var parts = storedHash.Split('.');

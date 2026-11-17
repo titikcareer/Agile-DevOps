@@ -29,8 +29,11 @@
     private HttpContext? HttpContext { get; set; }
 
     private string? RequestId { get; set; }
+
+    // The ID is only useful when we actually have one to show
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
+    /// Surfaces the current activity ID so users can quote it when reporting an error
     protected override void OnInitialized() =>
         RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
 }

@@ -1,4 +1,4 @@
-// Set up event handlers
+// Blazor Server reconnection UI
 const reconnectModal = document.getElementById("components-reconnect-modal");
 reconnectModal.addEventListener("components-reconnect-state-changed", handleReconnectStateChanged);
 
@@ -8,6 +8,9 @@ retryButton.addEventListener("click", retry);
 const resumeButton = document.getElementById("components-resume-button");
 resumeButton.addEventListener("click", resume);
 
+/**
+ * Reacts to the circuits connection-state transitions
+ */
 function handleReconnectStateChanged(event) {
     if (event.detail.state === "show") {
         reconnectModal.showModal();
@@ -20,18 +23,15 @@ function handleReconnectStateChanged(event) {
     }
 }
 
+/**
+ * Attempts to reconnect the circuit
+ */
 async function retry() {
     document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
 
     try {
-        // Reconnect will asynchronously return:
-        // - true to mean success
-        // - false to mean we reached the server, but it rejected the connection (e.g., unknown circuit ID)
-        // - exception to mean we didn't reach the server (this can be sync or async)
         const successful = await Blazor.reconnect();
         if (!successful) {
-            // We have been able to reach the server, but the circuit is no longer available.
-            // We'll reload the page so the user can continue using the app as quickly as possible.
             const resumeSuccessful = await Blazor.resumeCircuit();
             if (!resumeSuccessful) {
                 location.reload();
@@ -40,11 +40,13 @@ async function retry() {
             }
         }
     } catch (err) {
-        // We got an exception, server is currently unavailable
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     }
 }
 
+/**
+ * ResumeCircuit Blazor Server circuit
+ */
 async function resume() {
     try {
         const successful = await Blazor.resumeCircuit();
@@ -56,6 +58,9 @@ async function resume() {
     }
 }
 
+/**
+ * Visibility state change handler that retries the connection when the document becomes visible again
+ */
 async function retryWhenDocumentBecomesVisible() {
     if (document.visibilityState === "visible") {
         await retry();

@@ -43,8 +43,9 @@
 </div>
 
 @code {
+    // Bound from the posted form
     [SupplyParameterFromForm(FormName = "login")]
-    private LoginModel Model { get; set; } = new();
+    private LoginModel Model { get; set; } = default!;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -54,11 +55,13 @@
 
     private string? ErrorMessage;
 
+    /// Ensures the form model exists on the initial GET
     protected override void OnInitialized()
     {
         Model ??= new LoginModel();
     }
 
+    /// Authenticates the submitted credentials and, on success, issues the auth cookie with name/department/role claims before redirecting.
     private async Task HandleLogin()
     {
         var user = UserAccountStore.TryAuthenticate(Model.Nim.Trim(), Model.Password);
@@ -85,10 +88,12 @@
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
         });
 
+        // Fall back to the home page when no return URL was supplied
         var target = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
         NavigationManager.NavigateTo(target, forceLoad: true);
     }
 
+    /// Credentials entered on the login form
     private class LoginModel
     {
         [Required(ErrorMessage = "NPK wajib diisi")]

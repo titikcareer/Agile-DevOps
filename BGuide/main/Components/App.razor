@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    @* Preloads discovered assets and emits the import map used by the framework
+       and stylesheet fingerprinting. Must appear before the asset links *@
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
@@ -15,6 +17,7 @@
 </head>
 
 <body>
+    @* Root component tree, the reconnect dialog, and the Blazor runtime *@
     <Routes />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>

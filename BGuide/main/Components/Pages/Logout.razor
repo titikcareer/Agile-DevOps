@@ -8,6 +8,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    /// Clears the authentication cookie during a real HTTP request
     protected override async Task OnInitializedAsync()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

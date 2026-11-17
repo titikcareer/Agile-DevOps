@@ -153,16 +153,19 @@
 </div>
 
 @code {
+    // Cached store snapshots to avoid re-querying on every render
     private IReadOnlyList<DeclarationRecord> Submissions = Array.Empty<DeclarationRecord>();
     private IReadOnlyList<BestAgentOfMonth> BestAgents = Array.Empty<BestAgentOfMonth>();
     private IReadOnlyList<PicTotal> PicTotals = Array.Empty<PicTotal>();
 
+    /// Initial data load plus subscription to new submissions so the dashboard updates live as other users submit declarations
     protected override void OnInitialized()
     {
         RefreshData();
         DeclarationStore.Changed += OnStoreChanged;
     }
 
+    /// Store change handler. The event can originate from another circuit, so the refresh is marshalled back onto this components context
     private void OnStoreChanged()
     {
         _ = InvokeAsync(() =>
@@ -172,6 +175,7 @@
         });
     }
 
+    /// Recomputes every view model from a single submissions snapshot
     private void RefreshData()
     {
         Submissions = DeclarationStore.GetAll();
@@ -185,8 +189,7 @@
             .ToList();
     }
 
-    // Relative bar width for the simple leaderboard visualization, scaled
-    // against whichever PIC currently has the most submissions.
+    /// Scales a count to a 0-100 bar width relative to the current top submitter
     private int GetBarWidthPercent(int count)
     {
         var max = PicTotals.Count > 0 ? PicTotals[0].Count : 0;
@@ -194,19 +197,23 @@
         return (int)Math.Round(count * 100.0 / max);
     }
 
+    /// Aggregated submission total for one PIC in the recap table
     private record PicTotal(string PicId, string PicName, int Count);
 
+    /// <summary>Formats a month key as an Indonesian long month plus year.</summary>
     private static string FormatMonth(DateOnly month) =>
         month.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("id-ID"));
 
+    /// Converts a stored UTC timestamp to Western Indonesian Time (WIB) for display
     private static string FormatTimestamp(DateTime utc)
-{
-    TimeZoneInfo wibZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-    DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(utc, wibZone);
-    
-    return localTime.ToString("dd MMM yyyy, HH:mm", CultureInfo.GetCultureInfo("id-ID")) + " WIB";
-}
+    {
+        TimeZoneInfo wibZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(utc, wibZone);
+        
+        return localTime.ToString("dd MMM yyyy, HH:mm", CultureInfo.GetCultureInfo("id-ID")) + " WIB";
+    }
 
+    /// Unsubscribes from the store to release the event handler
     public void Dispose() => DeclarationStore.Changed -= OnStoreChanged;
 }
 

@@ -9,28 +9,16 @@ public record DeclarationRecord(
     string? VideoFileName,
     DateTime SubmittedAtUtc);
 
+/// Submission count for one PIC, used by the monthly leaderboard
 public record AgentTally(string PicId, string PicName, int SubmissionCount);
-
 public record BestAgentOfMonth(DateOnly Month, IReadOnlyList<AgentTally> TopAgents, int TotalSubmissions);
-
-/// <summary>
-/// In-memory, process-wide store of submitted declarations.
-/// Register as a Singleton in Program.cs:
-///     builder.Services.AddSingleton&lt;DeclarationStore&gt;();
-///
-/// Any component (e.g. ValorAgent.razor, Dashboard.razor) can inject this
-/// and subscribe to <see cref="Changed"/> to react in real time to new
-/// submissions coming from ANY user's session — that's what makes the
-/// Dashboard table and the "Best Agent" panel update live without a
-/// page refresh, across every connected Blazor Server circuit.
-/// </summary>
 public class DeclarationStore
 {
     private readonly object _lock = new();
     private readonly List<DeclarationRecord> _records = new();
     private const int MaxStoredRecords = 2000;
-    public event Action? Changed;
 
+    public event Action? Changed;
     public void Add(DeclarationRecord record)
     {
         lock (_lock)
@@ -45,7 +33,6 @@ public class DeclarationStore
 
         Changed?.Invoke();
     }
-
     public IReadOnlyList<DeclarationRecord> GetAll()
     {
         lock (_lock)

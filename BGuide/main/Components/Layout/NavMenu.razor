@@ -1,9 +1,11 @@
 ﻿@implements IDisposable
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
 @using main.Services
 @inject NavigationManager NavigationManager
 
+@* Top navigation bar (Brand, role-filtered links, and the user menu) *@
 <header class="topbar">
     <div class="topbar-inner">
 
@@ -25,7 +27,7 @@
             <input type="checkbox" title="Navigation menu" class="navbar-toggler d-md-none" />
         </div>
 
-        <!-- User pill (top-right), click to open a dropdown with account actions -->
+        <!-- User pill (top-right) -->
         <div class="user-menu">
             <input type="checkbox" id="user-menu-toggle" class="user-menu-toggle" />
             <label for="user-menu-toggle" class="user-menu-backdrop" aria-hidden="true"></label>
@@ -62,10 +64,12 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
+    // Display state derived from the authenticated principal and role set
     private string UserName { get; set; } = string.Empty;
     private string AvatarUrl { get; set; } = string.Empty;
     private List<NavItemModel> NavItems { get; set; } = new();
 
+    /// Reads the current identity, builds the navigation catalog, and keeps only the entries the user is authorized to see function
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
@@ -80,6 +84,7 @@
         {
             new("", "Home", "bi-house-door-fill", NavLinkMatch.All, RequiresDashboardAccess: false),
             new("dashboard", "Dashboard", "bi-plus-square-fill", NavLinkMatch.Prefix, RequiresDashboardAccess: true),
+            new("agent", "Agent Core Value", "bi-people-fill", NavLinkMatch.Prefix, RequiresDashboardAccess: true),
             new("declaration", "Value & Agent Declaration Portal", "bi-list-nested", NavLinkMatch.Prefix, RequiresDashboardAccess: false),
         };
 
@@ -90,12 +95,15 @@
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
+   /// Re-renders on navigation so the active NavLink state and mobile menu reset correctly without a full page reload
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
         => StateHasChanged();
 
+    /// Detaches the navigation handler to avoid leaks per circuit
     public void Dispose()
         => NavigationManager.LocationChanged -= OnLocationChanged;
 
+    /// One navigation entry, including whether it requires dashboard rights
     private record NavItemModel(string Href, string Label, string Icon, NavLinkMatch Match, bool RequiresDashboardAccess);
 }
 
@@ -115,7 +123,6 @@
         gap: 1rem;
     }
 
-    /* Brand pill */
     .brand-pill {
         display: inline-flex;
         align-items: center;
@@ -134,7 +141,6 @@
         display: block;
     }
 
-    /* Center links */
     .topbar-links {
         gap: 1.75rem;
     }
@@ -166,7 +172,6 @@
         justify-content: center;
     }
 
-    /* User pill */
     .user-pill {
         display: inline-flex;
         align-items: center;
@@ -196,7 +201,6 @@
         background: #eef3fb;
     }
 
-    /* User dropdown */
     .user-menu {
         position: relative;
     }
