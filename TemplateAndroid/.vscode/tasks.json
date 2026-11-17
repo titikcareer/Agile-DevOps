@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Install & Run",
+      "type": "shell",
+      "command": "./gradlew installDebug && adb shell am start -n \"${config:android.packageName}/${config:android.mainActivity}\"",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Quick Build Only",
+      "type": "shell",
+      "command": "./gradlew assembleDebug",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+    "label": "Android: Mirror Screen (Scrcpy)",
+    "type": "shell",
+    "command": "scrcpy --max-size 1024 --max-fps 60",
+    "problemMatcher": []
+    }
+  ]
+}

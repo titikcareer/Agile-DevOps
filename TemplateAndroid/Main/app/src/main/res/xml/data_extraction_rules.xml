@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- No sensitive local files to exclude for this app yet. -->
+    </cloud-backup>
+</data-extraction-rules>
